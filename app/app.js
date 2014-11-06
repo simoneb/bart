@@ -5,15 +5,15 @@ angular.module('myApp', ['ngRoute'])
     .config(['$routeProvider', function ($routeProvider) {
       $routeProvider
           .when('/start', {
-            templateUrl: 'templates/start.html',
+            templateUrl: 'app/templates/start.html',
             controller: 'StartCtrl'
           })
           .when('/summary', {
-            templateUrl: 'templates/summary.html',
+            templateUrl: 'app/templates/summary.html',
             controller: 'SummaryCtrl'
           })
           .when('/test', {
-            templateUrl: 'templates/test.html',
+            templateUrl: 'app/templates/test.html',
             controller: 'TestCtrl'
           })
           .otherwise({ redirectTo: '/start' });
