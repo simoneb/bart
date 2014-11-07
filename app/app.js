@@ -69,9 +69,9 @@ angular.module('myApp', ['ngRoute'])
         };
 
         this.pump = function (cb) {
-          var explode = Math.floor((Math.random() * (maxPumps - pumps - 1)) + 1) === 1;
-
           pumps++;
+
+          var explode = Math.floor((Math.random() * (maxPumps - pumps - 1)) + 1) === 1;
 
           if (explode) {
             return cb(true, false, pumps, 0);
