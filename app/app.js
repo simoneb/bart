@@ -103,8 +103,12 @@ angular.module('bart', ['ngRoute'])
         game.collect(handleCallback);
       };
     })
-    .controller('EndCtrl', function ($scope, $routeParams) {
+    .controller('EndCtrl', function ($scope, $routeParams, $location) {
       $scope.winnings = $routeParams.totalWinnings;
+
+      $scope.next = function() {
+        $location.url('/start');
+      };
     })
     .factory('Game', function () {
       function Balloon(maxPumps, winningsPerPump) {
