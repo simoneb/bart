@@ -22,18 +22,41 @@ angular.module('bart', ['ngRoute'])
           })
           .otherwise({ redirectTo: '/start' });
     }])
-    .controller('StartCtrl', function ($scope, $location) {
-      $scope.next = function () {
-        $location.url('/summary');
-      };
+    .value('Configuration', {
+      maxPumps: 128,
+      maxBalloons: 30,
+      winningsPerBalloon: 0.05
     })
-    .controller('SummaryCtrl', function ($scope, $location) {
-      $scope.next = function () {
-        $location.url('/game');
-      };
+    .controller('StartCtrl', function ($scope, $location, Configuration) {
+      $scope.winningsPerBalloon = Configuration.winningsPerBalloon;
+      $scope.maxBalloons = Configuration.maxBalloons;
+
+      angular.element(document).one('click', function () {
+        $scope.$apply(function () {
+          $location.url('/summary');
+        });
+      });
     })
-    .controller('GameCtrl', function ($scope, $location, Game) {
-      var game = new Game(128, 30, 0.05);
+    .controller('SummaryCtrl', function ($scope, $location, Configuration) {
+      $scope.winningsPerBalloon = Configuration.winningsPerBalloon;
+      $scope.maxBalloons = Configuration.maxBalloons;
+
+      angular.element(document).one('click', function () {
+        $scope.$apply(function () {
+          $location.url('/game');
+        });
+      });
+    })
+    .controller('GameCtrl', function ($scope, $location, Game, Configuration) {
+      var maxPumps = Configuration.maxPumps,
+          game = new Game(maxPumps, Configuration.maxBalloons, Configuration.winningsPerBalloon),
+          minBalloonHeight = 200,
+          balloon = $('#balloon'),
+          blow = $('#blow')[0],
+          pop = $('#pop')[0],
+          cash = $('#cash')[0];
+
+      $scope.balloonHeight = minBalloonHeight;
 
       $scope.potentialEarnings = 0;
       $scope.balloonNumber = 1;
@@ -66,6 +89,25 @@ angular.module('bart', ['ngRoute'])
         document.body.removeChild(link);
       }
 
+      function stopAllSounds() {
+        $('audio').each(function () {
+          this.pause();
+          this.currentTime = 0;
+        });
+      }
+
+      function getMaximumBalloonHeight() {
+        return balloon.offset().top + $scope.balloonHeight;
+      }
+
+      function increaseBalloonSize() {
+        $scope.balloonHeight += (getMaximumBalloonHeight() - minBalloonHeight) / (maxPumps - 1);
+      }
+
+      function resetBalloonSize() {
+        $scope.balloonHeight = minBalloonHeight;
+      }
+
       function handleCallback(gameContinues,
                               balloonExploded,
                               balloonEarnings,
@@ -79,7 +121,11 @@ angular.module('bart', ['ngRoute'])
         $scope.totalWinnings = totalWinnings;
         $scope.stats = stats;
 
-        if (balloonExploded) alert('booom!');
+        if (balloonExploded) {
+          stopAllSounds();
+          pop.play();
+          resetBalloonSize();
+        }
 
         if (!gameContinues) {
           var summary = Object.keys(stats.summary).join('\t');
@@ -96,19 +142,25 @@ angular.module('bart', ['ngRoute'])
       }
 
       $scope.pump = function () {
+        stopAllSounds();
+        blow.play();
+
+        increaseBalloonSize();
+
         game.pump(handleCallback);
       };
 
       $scope.collectWinnings = function () {
+        stopAllSounds();
+        cash.play();
+
+        resetBalloonSize();
+
         game.collect(handleCallback);
       };
     })
     .controller('EndCtrl', function ($scope, $routeParams, $location) {
       $scope.winnings = $routeParams.totalWinnings;
-
-      $scope.next = function () {
-        $location.url('/start');
-      };
     })
     .factory('Game', function () {
       function Balloon(maxPumps, winningsPerPump) {
@@ -289,4 +341,4 @@ angular.module('bart', ['ngRoute'])
           cb(gameContinues, false, 0, currentBalloonCount, 0, winnings, stats);
         };
       };
-    });
+    })

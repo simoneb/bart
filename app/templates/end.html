@@ -1,3 +1,8 @@
-<div ng-click="next()">
-    Congratulazioni! Hai vinto {{winnings | currency:'&euro;':2}}
+<div class="text" ng-switch="winnings">
+    <p ng-switch-when="0">
+        Purtroppo non hai vinto nulla!
+    </p>
+    <p ng-switch-default>
+        Congratulazioni! Hai vinto {{winnings | currency:'&euro;':2}}
+    </p>
 </div>

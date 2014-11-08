@@ -1,13 +1,15 @@
-<div ng-click="next()">
-  <h3>Sommario</h3>
-  <ul>
-    <li>Guadagnerai 0.05 &euro; ogni volta che gonfi in palloncino</li>
-    <li>Guadagni i soldi per un palloncino quando premi "Incassa &euro;&euro;&euro;"</li>
-    <li>Perdi i soldi di un palloncino quando scoppia</li>
-    <li>Ci sono solo 30 palloncini</li>
-    <li>Verrai pagato esattamente i soldi che hai guadagnato durante il gioco</li>
-  </ul>
-  <p>Hai qualche domanda?</p>
+<div class="text">
+    <h3>Riassunto</h3>
+    <ul>
+        <li>Guadagnerai <b>{{winningsPerBalloon|currency:'&euro;'}}</b>
+            ogni volta che gonfi un palloncino senza che questo scoppi
+        </li>
+        <li>Quando premi <b>Incassa &euro;&euro;&euro;</b> accumuli i soldi per quel palloncino</li>
+        <li>Quando il palloncino esplode perdi i soldi di quel palloncino</li>
+        <li>Ci sono in tutto {{maxBalloons}} palloncini</li>
+        <li>Alla fine ti saranno dati esattamente i soldi che hai guadagnato durante il gioco</li>
+    </ul>
+    <p>Hai qualche domanda?</p>
 
-  <p>Permi il bottone sinistro del mouse per iniziare.</p>
+    <p>Permi il bottone sinistro del mouse per iniziare.</p>
 </div>
