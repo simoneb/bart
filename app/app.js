@@ -106,7 +106,7 @@ angular.module('bart', ['ngRoute'])
     .controller('EndCtrl', function ($scope, $routeParams, $location) {
       $scope.winnings = $routeParams.totalWinnings;
 
-      $scope.next = function() {
+      $scope.next = function () {
         $location.url('/start');
       };
     })
@@ -246,13 +246,16 @@ angular.module('bart', ['ngRoute'])
           balloon.pump(function (exploded, canPumpAgain, numberOfPumps, balloonEarnings) {
             var gameContinues = canPumpAgain || currentBalloonCount < maxBalloons;
 
-            if (!canPumpAgain && gameContinues) {
-              createBalloon();
-            }
+            if (!canPumpAgain) {
+              if (gameContinues) {
+                numberOfPumps = 0;
+                createBalloon();
+              }
 
-            if (!canPumpAgain && !exploded) {
-              winnings += balloonEarnings;
-              balloonEarnings = 0;
+              if (!exploded) {
+                winnings += balloonEarnings;
+                balloonEarnings = 0;
+              }
             }
 
             if (!gameContinues) {
