@@ -22,13 +22,13 @@ angular.module('bart', ['ngRoute'])
           })
           .otherwise({ redirectTo: '/start' });
     }])
-    .value('Configuration', {
+    .constant('Configuration', {
       maxPumps: 128,
       maxBalloons: 30,
-      winningsPerBalloon: 0.05
+      winningsPerPump: 0.05
     })
     .controller('StartCtrl', function ($scope, $location, Configuration) {
-      $scope.winningsPerBalloon = Configuration.winningsPerBalloon;
+      $scope.winningsPerPump = Configuration.winningsPerPump;
       $scope.maxBalloons = Configuration.maxBalloons;
 
       angular.element(document).one('click', function () {
@@ -38,7 +38,7 @@ angular.module('bart', ['ngRoute'])
       });
     })
     .controller('SummaryCtrl', function ($scope, $location, Configuration) {
-      $scope.winningsPerBalloon = Configuration.winningsPerBalloon;
+      $scope.winningsPerPump = Configuration.winningsPerPump;
       $scope.maxBalloons = Configuration.maxBalloons;
 
       angular.element(document).one('click', function () {
@@ -49,7 +49,7 @@ angular.module('bart', ['ngRoute'])
     })
     .controller('GameCtrl', function ($scope, $location, Game, Configuration) {
       var maxPumps = Configuration.maxPumps,
-          game = new Game(maxPumps, Configuration.maxBalloons, Configuration.winningsPerBalloon),
+          game = new Game(),
           minBalloonHeight = 200,
           balloon = $('#balloon'),
           blow = $('#blow')[0],
@@ -69,7 +69,7 @@ angular.module('bart', ['ngRoute'])
         if (link.download !== undefined) { // feature detection
           // Browsers that support HTML5 download attribute
           var blob = new Blob([contents], { type: 'text/csv;charset=utf-8;' });
-          var url = URL.createObjectURL(blob);
+          var url = window.URL.createObjectURL(blob);
           link.setAttribute("href", url);
           link.setAttribute("download", fileName);
           link.style = "visibility:hidden";
@@ -159,16 +159,16 @@ angular.module('bart', ['ngRoute'])
         game.collect(handleCallback);
       };
     })
-    .controller('EndCtrl', function ($scope, $routeParams, $location) {
+    .controller('EndCtrl', function ($scope, $routeParams) {
       $scope.winnings = $routeParams.totalWinnings;
     })
-    .factory('Game', function () {
-      function Balloon(maxPumps, winningsPerPump) {
+    .factory('Balloon', function (Configuration) {
+      return function Balloon() {
         var pumps = 0,
             exploded = false;
 
         this.getCurrentEarnings = function () {
-          return pumps * winningsPerPump;
+          return pumps * Configuration.winningsPerPump;
         };
 
         this.getPumps = function () {
@@ -182,15 +182,16 @@ angular.module('bart', ['ngRoute'])
         this.pump = function (cb) {
           pumps++;
 
-          if (!Math.floor(Math.random() * (maxPumps - pumps + 1))) {
+          if (!Math.floor(Math.random() * (Configuration.maxPumps - pumps + 1))) {
             return cb(exploded = true, false, pumps, 0);
           }
 
-          cb(false, pumps < maxPumps, pumps, pumps * winningsPerPump);
+          cb(false, pumps < Configuration.maxPumps, pumps, pumps * Configuration.winningsPerPump);
         };
       }
-
-      return function Game(maxPumps, maxBalloons, winningPerPump) {
+    })
+    .factory('Game', function (Balloon, Configuration) {
+      return function Game() {
         var currentBalloonCount = 0,
             winnings = 0,
             balloon,
@@ -211,7 +212,7 @@ angular.module('bart', ['ngRoute'])
           if (balloon)
             createBalloonStats();
 
-          balloon = new Balloon(maxPumps, winningPerPump);
+          balloon = new Balloon();
           currentBalloonCount++;
         }
 
@@ -258,7 +259,7 @@ angular.module('bart', ['ngRoute'])
 
           stats.summary = {
             elapsedTime: stats.end.diff(stats.start),
-            completed: stats.balloons.length === maxBalloons,
+            completed: stats.balloons.length === Configuration.maxBalloons,
             balloonCount: stats.balloons.length,
             balloonCount_10: firstTen.length,
             balloonCount_20: secondTen.length,
@@ -296,7 +297,7 @@ angular.module('bart', ['ngRoute'])
           }
 
           balloon.pump(function (exploded, canPumpAgain, numberOfPumps, balloonEarnings) {
-            var gameContinues = canPumpAgain || currentBalloonCount < maxBalloons;
+            var gameContinues = canPumpAgain || currentBalloonCount < Configuration.maxBalloons;
 
             if (!canPumpAgain) {
               if (gameContinues) {
@@ -327,7 +328,7 @@ angular.module('bart', ['ngRoute'])
         };
 
         this.collect = function (cb) {
-          var gameContinues = currentBalloonCount < maxBalloons;
+          var gameContinues = currentBalloonCount < Configuration.maxBalloons;
 
           winnings += balloon.getCurrentEarnings();
 
@@ -341,4 +342,4 @@ angular.module('bart', ['ngRoute'])
           cb(gameContinues, false, 0, currentBalloonCount, 0, winnings, stats);
         };
       };
-    })
+    });
