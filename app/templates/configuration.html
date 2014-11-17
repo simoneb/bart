@@ -1,0 +1,46 @@
+<audio id="blow" ng-src="{{blowSound}}"></audio>
+<audio id="pop" ng-src="{{popSound}}"></audio>
+<audio id="cash" ng-src="{{cashSound}}"></audio>
+<div class="text">
+    <form>
+        <div class="control-group">
+            <label for="maxPumps">Max pumps: </label>
+            <input type="number" id="maxPumps" ng-model="c.maxPumps">
+        </div>
+        <div class="control-group">
+            <label for="maxPumps">Max balloons: </label>
+            <input type="number" id="maxBalloons" ng-model="c.maxBalloons">
+
+        </div>
+        <div class="control-group">
+            <label for="maxPumps">Winnings per pump: </label>
+            <input type="number" id="winningsPerPump" step=".01" ng-model="c.winningsPerPump">
+        </div>
+        <div class="control-group">
+            <label for="blowVolume">Blow volume: </label>
+            <span>{{c.blowVolume | percent}}</span>
+            <input type="range" step=".01"  min="0" max="1" id="blowVolume" ng-change="setBlowVolume()"
+                   ng-model="c.blowVolume">
+            <button ng-click="playBlow()">Play</button>
+        </div>
+        <div class="control-group">
+            <label for="popVolume">Pop volume: </label>
+            <span>{{c.popVolume | percent}}</span>
+            <input type="range" step=".01"  min="0" max="1" id="popVolume" ng-change="setPopVolume()"
+                   ng-model="c.popVolume">
+            <button ng-click="playPop()">Play</button>
+        </div>
+        <div class="control-group">
+            <label for="cashVolume">Cash volume: </label>
+            <span>{{c.cashVolume | percent}}</span>
+            <input type="range" step=".01"  min="0" max="1" id="cashVolume" ng-change="setCashVolume()"
+                   ng-model="c.cashVolume">
+            <button ng-click="playCash()">Play</button>
+        </div>
+        <div class="control-group">
+            <button ng-click="back($event)">Back</button>
+            &nbsp;|&nbsp;
+            <button ng-click="reset()">Reset default</button>
+        </div>
+    </form>
+</div>

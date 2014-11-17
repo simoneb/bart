@@ -12,7 +12,8 @@
     </p>
 
     <p>
-        Ogni volta che gonfierai un palloncino guadagnerai <b>{{ winningsPerPump | currency:'&euro;' }}</b> ma se il palloncino
+        Ogni volta che gonfierai un palloncino guadagnerai <b>{{ winningsPerPump | currency }}</b> ma se il
+        palloncino
         scoppia perdi i soldi che avevi guadagnato per quel palloncino.
         Per incassare i soldi di un palloncino smetti di gonfiare prima che scoppi e clicca sul bottone
         <b>Incassa &euro;&euro;&euro;</b>.
@@ -31,3 +32,4 @@
         Premi il bottone sinistro del mouse per vedere un riassunto delle istruzioni.
     </p>
 </div>
+<a href="#/configuration" ng-click="$event.stopPropagation()" class="config">configuration</a>

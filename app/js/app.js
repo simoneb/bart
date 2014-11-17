@@ -20,41 +20,96 @@ angular.module('bart', ['ngRoute'])
             templateUrl: 'app/templates/end.html',
             controller: 'EndCtrl'
           })
+          .when('/configuration', {
+            templateUrl: 'app/templates/configuration.html',
+            controller: 'ConfigurationCtrl'
+          })
           .otherwise({ redirectTo: '/start' });
     }])
-    .constant('Configuration', {
-      maxPumps: 128,
-      maxBalloons: 30,
-      winningsPerPump: 0.05
+    .filter('percent', function() {
+      return function(value) {
+        var fValue = parseFloat(value);
+
+        if(!isNaN(fValue)) {
+          return parseInt(fValue * 100) + ' %';
+        }
+      };
     })
-    .controller('StartCtrl', function ($scope, $location, Configuration) {
-      $scope.winningsPerPump = Configuration.winningsPerPump;
-      $scope.maxBalloons = Configuration.maxBalloons;
+    .factory('Configuration', function ($window) {
+      var defaultConfiguration = {
+        maxPumps: 128,
+        maxBalloons: 30,
+        winningsPerPump: .05,
+        blowVolume: .7,
+        popVolume: .9,
+        cashVolume: .7
+      };
+
+      return {
+        get: function () {
+          return angular.fromJson($window.localStorage.getItem('configuration') || defaultConfiguration);
+        },
+        set: function (value) {
+          $window.localStorage.setItem('configuration', angular.toJson(value));
+        },
+        reset: function () {
+          this.set(defaultConfiguration);
+        }
+      };
+    })
+    .constant('Resources', {
+      blowSound: 'app/media/Balloon%20Blowing%20Up-SoundBible.com-1989230335.mp3',
+      popSound: 'app/media/Balloon%20Popping-SoundBible.com-1247261379.mp3',
+      cashSound: 'app/media/Cash%20Register%20Cha%20Ching-SoundBible.com-184076484.mp3'
+    })
+    .controller('StartCtrl', function ($scope, $location, $timeout, Configuration) {
+      var configuration = Configuration.get();
+
+      $scope.winningsPerPump = configuration.winningsPerPump;
+      $scope.maxBalloons = configuration.maxBalloons;
 
       angular.element(document).one('click', function () {
-        $scope.$apply(function () {
+        $timeout(function () {
           $location.url('/summary');
-        });
+        }, 200);
+      });
+
+      $scope.$on('$destroy', function() {
+        angular.element(document).off('click');
       });
     })
-    .controller('SummaryCtrl', function ($scope, $location, Configuration) {
-      $scope.winningsPerPump = Configuration.winningsPerPump;
-      $scope.maxBalloons = Configuration.maxBalloons;
+    .controller('SummaryCtrl', function ($scope, $location, $timeout, Configuration) {
+      var configuration = Configuration.get();
+
+      $scope.winningsPerPump = configuration.winningsPerPump;
+      $scope.maxBalloons = configuration.maxBalloons;
 
       angular.element(document).one('click', function () {
-        $scope.$apply(function () {
+        $timeout(function () {
           $location.url('/game');
-        });
+        }, 200);
+      });
+
+      $scope.$on('$destroy', function() {
+        angular.element(document).off('click');
       });
     })
-    .controller('GameCtrl', function ($scope, $location, Game, Configuration) {
-      var maxPumps = Configuration.maxPumps,
+    .controller('GameCtrl', function ($scope, $location, $filter, $timeout, Game, Configuration, Resources) {
+      var configuration = Configuration.get(),
+          maxPumps = configuration.maxPumps,
           game = new Game(),
           minBalloonHeight = 200,
           balloon = $('#balloon'),
           blow = $('#blow')[0],
           pop = $('#pop')[0],
-          cash = $('#cash')[0];
+          cash = $('#cash')[0],
+          number = $filter('number');
+
+      angular.extend($scope, Resources);
+
+      blow.volume = configuration.blowVolume;
+      pop.volume = configuration.popVolume;
+      cash.volume = configuration.cashVolume;
 
       $scope.balloonHeight = minBalloonHeight;
 
@@ -120,6 +175,13 @@ angular.module('bart', ['ngRoute'])
         $scope.numberOfPumps = numberOfPumps;
         $scope.totalWinnings = totalWinnings;
         $scope.stats = stats;
+        $scope.balloonExploded = balloonExploded;
+
+        if (balloonExploded) {
+          $timeout(function () {
+            $scope.balloonExploded = false;
+          }, 1000);
+        }
 
         if (balloonExploded) {
           stopAllSounds();
@@ -129,10 +191,10 @@ angular.module('bart', ['ngRoute'])
 
         if (!gameContinues) {
           var summary = Object.keys(stats.summary).join('\t');
-          summary += '\n';
+          summary += '\r\n';
 
           for (var key in stats.summary) {
-            summary += stats.summary[key] + '\t';
+            summary += number(stats.summary[key]) + '\t';
           }
 
           downloadFile('summary-' + moment().format('DDMMYYYY-HHmmss') + '.txt', summary);
@@ -159,16 +221,81 @@ angular.module('bart', ['ngRoute'])
         game.collect(handleCallback);
       };
     })
+    .controller('ConfigurationCtrl', function ($scope, $location, Configuration, Resources) {
+      var blow = $('#blow')[0],
+          pop = $('#pop')[0],
+          cash = $('#cash')[0];
+
+      $scope.c = {};
+
+      angular.extend($scope.c, Configuration.get());
+      angular.extend($scope, Resources);
+
+      var clearWatch = $scope.$watchCollection('c', function (newNames) {
+        Configuration.set(newNames);
+      });
+
+      $scope.$on('$destroy', clearWatch);
+
+      function stopAll() {
+        $('audio').each(function () {
+          this.pause();
+          this.currentTime = 0;
+        });
+      }
+
+      $scope.playBlow = function () {
+        stopAll();
+        blow.play();
+      };
+
+      $scope.playPop = function () {
+        stopAll();
+        pop.play();
+      };
+
+      $scope.playCash = function () {
+        stopAll();
+        cash.play();
+      };
+
+      $scope.setBlowVolume = function () {
+        blow.volume = $scope.c.blowVolume;
+      };
+
+      $scope.setPopVolume = function () {
+        pop.volume = $scope.c.popVolume;
+      };
+
+      $scope.setCashVolume = function () {
+        cash.volume = $scope.c.cashVolume;
+      };
+
+      $scope.reset = function () {
+        Configuration.reset();
+        angular.extend($scope.c, Configuration.get());
+      };
+
+      $scope.back = function($event) {
+        $event.stopPropagation();
+        $location.path('/start');
+      };
+
+      $scope.setBlowVolume();
+      $scope.setPopVolume();
+      $scope.setCashVolume();
+    })
     .controller('EndCtrl', function ($scope, $routeParams) {
       $scope.winnings = $routeParams.totalWinnings;
     })
     .factory('Balloon', function (Configuration) {
       return function Balloon() {
         var pumps = 0,
-            exploded = false;
+            exploded = false,
+            config = Configuration.get();
 
         this.getCurrentEarnings = function () {
-          return pumps * Configuration.winningsPerPump;
+          return pumps * config.winningsPerPump;
         };
 
         this.getPumps = function () {
@@ -182,16 +309,18 @@ angular.module('bart', ['ngRoute'])
         this.pump = function (cb) {
           pumps++;
 
-          if (!Math.floor(Math.random() * (Configuration.maxPumps - pumps + 1))) {
+          if (!Math.floor(Math.random() * (config.maxPumps - pumps + 1))) {
             return cb(exploded = true, false, pumps, 0);
           }
 
-          cb(false, pumps < Configuration.maxPumps, pumps, pumps * Configuration.winningsPerPump);
+          cb(false, pumps < config.maxPumps, pumps, pumps * config.winningsPerPump);
         };
       }
     })
     .factory('Game', function (Balloon, Configuration) {
       return function Game() {
+        var maxBalloons = Configuration.get().maxBalloons;
+
         var currentBalloonCount = 0,
             winnings = 0,
             balloon,
@@ -259,7 +388,7 @@ angular.module('bart', ['ngRoute'])
 
           stats.summary = {
             elapsedTime: stats.end.diff(stats.start),
-            completed: stats.balloons.length === Configuration.maxBalloons,
+            completed: stats.balloons.length === maxBalloons,
             balloonCount: stats.balloons.length,
             balloonCount_10: firstTen.length,
             balloonCount_20: secondTen.length,
@@ -297,7 +426,7 @@ angular.module('bart', ['ngRoute'])
           }
 
           balloon.pump(function (exploded, canPumpAgain, numberOfPumps, balloonEarnings) {
-            var gameContinues = canPumpAgain || currentBalloonCount < Configuration.maxBalloons;
+            var gameContinues = canPumpAgain || currentBalloonCount < maxBalloons;
 
             if (!canPumpAgain) {
               if (gameContinues) {
@@ -328,7 +457,7 @@ angular.module('bart', ['ngRoute'])
         };
 
         this.collect = function (cb) {
-          var gameContinues = currentBalloonCount < Configuration.maxBalloons;
+          var gameContinues = currentBalloonCount < maxBalloons;
 
           winnings += balloon.getCurrentEarnings();
 
