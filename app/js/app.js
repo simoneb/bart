@@ -26,11 +26,11 @@ angular.module('bart', ['ngRoute'])
           })
           .otherwise({ redirectTo: '/start' });
     }])
-    .filter('percent', function() {
-      return function(value) {
+    .filter('percent', function () {
+      return function (value) {
         var fValue = parseFloat(value);
 
-        if(!isNaN(fValue)) {
+        if (!isNaN(fValue)) {
           return parseInt(fValue * 100) + ' %';
         }
       };
@@ -62,37 +62,36 @@ angular.module('bart', ['ngRoute'])
       popSound: 'app/media/Balloon%20Popping-SoundBible.com-1247261379.mp3',
       cashSound: 'app/media/Cash%20Register%20Cha%20Ching-SoundBible.com-184076484.mp3'
     })
-    .controller('StartCtrl', function ($scope, $location, $timeout, Configuration) {
-      var configuration = Configuration.get();
-
-      $scope.winningsPerPump = configuration.winningsPerPump;
-      $scope.maxBalloons = configuration.maxBalloons;
-
-      angular.element(document).one('click', function () {
+    .factory('OnClickGo', function ($timeout, $window, $location) {
+      return function ($scope, path) {
         $timeout(function () {
-          $location.url('/summary');
-        }, 200);
-      });
+          angular.element($window.document).one('click', function () {
+            $timeout(function () {
+              $location.url(path);
+            }, 0);
+          });
+        }, 1000);
 
-      $scope.$on('$destroy', function() {
-        angular.element(document).off('click');
-      });
+        $scope.$on('$destroy', function () {
+          angular.element($window.document).off('click');
+        });
+      }
     })
-    .controller('SummaryCtrl', function ($scope, $location, $timeout, Configuration) {
+    .controller('StartCtrl', function ($scope, Configuration, OnClickGo) {
       var configuration = Configuration.get();
 
       $scope.winningsPerPump = configuration.winningsPerPump;
       $scope.maxBalloons = configuration.maxBalloons;
 
-      angular.element(document).one('click', function () {
-        $timeout(function () {
-          $location.url('/game');
-        }, 200);
-      });
+      OnClickGo($scope, '/summary');
+    })
+    .controller('SummaryCtrl', function ($scope, Configuration, OnClickGo) {
+      var configuration = Configuration.get();
 
-      $scope.$on('$destroy', function() {
-        angular.element(document).off('click');
-      });
+      $scope.winningsPerPump = configuration.winningsPerPump;
+      $scope.maxBalloons = configuration.maxBalloons;
+
+      OnClickGo($scope, '/game');
     })
     .controller('GameCtrl', function ($scope, $location, $filter, $timeout, Game, Configuration, Resources) {
       var configuration = Configuration.get(),
@@ -276,7 +275,7 @@ angular.module('bart', ['ngRoute'])
         angular.extend($scope.c, Configuration.get());
       };
 
-      $scope.back = function($event) {
+      $scope.back = function ($event) {
         $event.stopPropagation();
         $location.path('/start');
       };
@@ -413,7 +412,8 @@ angular.module('bart', ['ngRoute'])
             adjustedTotalPumpCount_10: countPumps(getNonExploded(firstTen)),
             adjustedTotalPumpCount_20: countPumps(getNonExploded(secondTen)),
             adjustedTotalPumpCount_30: countPumps(getNonExploded(thirdTen)),
-            adjustedAveragePumpCount: countPumps(getNonExploded(stats.balloons)) / getNonExploded(stats.balloons).length,
+            adjustedAveragePumpCount: countPumps(getNonExploded(stats.balloons)) /
+            getNonExploded(stats.balloons).length,
             adjustedAveragePumpCount_10: countPumps(getNonExploded(firstTen)) / getNonExploded(firstTen).length,
             adjustedAveragePumpCount_20: countPumps(getNonExploded(secondTen)) / getNonExploded(secondTen).length,
             adjustedAveragePumpCount_30: countPumps(getNonExploded(thirdTen)) / getNonExploded(thirdTen).length
