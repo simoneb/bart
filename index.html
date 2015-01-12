@@ -1,8 +1,12 @@
 <!DOCTYPE html>
-<!--[if lt IE 7]>      <html lang="en" ng-app="bart" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
-<!--[if IE 7]>         <html lang="en" ng-app="bart" class="no-js lt-ie9 lt-ie8"> <![endif]-->
-<!--[if IE 8]>         <html lang="en" ng-app="bart" class="no-js lt-ie9"> <![endif]-->
-<!--[if gt IE 8]><!--> <html lang="en" ng-app="bart" class="no-js"> <!--<![endif]-->
+<!--[if lt IE 7]>
+<html lang="en" ng-app="bart" class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>
+<html lang="en" ng-app="bart" class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>
+<html lang="en" ng-app="bart" class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html lang="en" ng-app="bart" class="no-js"> <!--<![endif]-->
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -15,20 +19,176 @@
   <script src="app/bower_components/html5-boilerplate/js/vendor/modernizr-2.6.2.min.js"></script>
 </head>
 <body>
-  <!--[if lt IE 7]>
-      <p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-  <![endif]-->
+<!--[if lt IE 7]>
+<p class="browsehappy">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade
+  your browser</a> to improve your experience.</p>
+<![endif]-->
 
-  <div ng-view></div>
+<div ng-view></div>
 
-  <!-- In production use:
-  <script src="//ajax.googleapis.com/ajax/libs/angularjs/x.x.x/angular.min.js"></script>
-  -->
-  <script src="app/bower_components/jquery/dist/jquery.min.js"></script>
-  <script src="app/bower_components/angular/angular.js"></script>
-  <script src="app/bower_components/angular-route/angular-route.js"></script>
-  <script src="app/bower_components/moment/min/moment.min.js"></script>
-  <script src="app/js/angular-locale_it-it.js"></script>
-  <script src="app/js/app.js"></script>
+<!-- In production use:
+<script src="//ajax.googleapis.com/ajax/libs/angularjs/x.x.x/angular.min.js"></script>
+-->
+<script src="app/bower_components/jquery/dist/jquery.min.js"></script>
+<script src="app/bower_components/angular/angular.js"></script>
+<script src="app/bower_components/angular-route/angular-route.js"></script>
+<script src="app/bower_components/moment/min/moment.min.js"></script>
+<script src="app/js/angular-locale_it-it.js"></script>
+<script src="app/js/app.js"></script>
+
+<!-- templates -->
+<script type="text/ng-template" id="app/templates/configuration.html">
+  <audio id="blow" ng-src="{{blowSound}}"></audio>
+  <audio id="pop" ng-src="{{popSound}}"></audio>
+  <audio id="cash" ng-src="{{cashSound}}"></audio>
+  <div class="text">
+    <form>
+      <div class="control-group">
+        <label for="maxPumps">Max pumps: </label>
+        <input type="number" id="maxPumps" ng-model="c.maxPumps">
+      </div>
+      <div class="control-group">
+        <label for="maxPumps">Max balloons: </label>
+        <input type="number" id="maxBalloons" ng-model="c.maxBalloons">
+
+      </div>
+      <div class="control-group">
+        <label for="maxPumps">Winnings per pump: </label>
+        <input type="number" id="winningsPerPump" step=".01" ng-model="c.winningsPerPump">
+      </div>
+      <div class="control-group">
+        <label for="blowVolume">Blow volume: </label>
+        <span>{{c.blowVolume | percent}}</span>
+        <input type="range" step=".01" min="0" max="1" id="blowVolume" ng-change="setBlowVolume()"
+               ng-model="c.blowVolume">
+        <button ng-click="playBlow()">Play</button>
+      </div>
+      <div class="control-group">
+        <label for="popVolume">Pop volume: </label>
+        <span>{{c.popVolume | percent}}</span>
+        <input type="range" step=".01" min="0" max="1" id="popVolume" ng-change="setPopVolume()"
+               ng-model="c.popVolume">
+        <button ng-click="playPop()">Play</button>
+      </div>
+      <div class="control-group">
+        <label for="cashVolume">Cash volume: </label>
+        <span>{{c.cashVolume | percent}}</span>
+        <input type="range" step=".01" min="0" max="1" id="cashVolume" ng-change="setCashVolume()"
+               ng-model="c.cashVolume">
+        <button ng-click="playCash()">Play</button>
+      </div>
+      <div class="control-group">
+        <button ng-click="back($event)">Back</button>
+        &nbsp;|&nbsp;
+        <button ng-click="reset()">Reset default</button>
+      </div>
+    </form>
+  </div>
+</script>
+
+<script type="text/ng-template" id="app/templates/start.html">
+  <div class="text">
+    <p>
+      Fra poco vedrai sullo schermo {{maxBalloons}} palloncini, uno dopo l'altro.
+      Premendo il tasto sinistro del mouse sul bottone <b>Gonfia il palloncino</b> gonfierai il palloncino.
+      Ogni click del mouse gonfia il palloncino un po' più di prima.
+    </p>
+
+    <p>
+      Ricorda, i palloncini scoppiano se li gonfi troppo. Puoi decidere tu quanto gonfiare ogni
+      palloncino. Alcuni palloncini potrebbero esplodere al primo colpo, altri potrebbero non esplodere
+      finchè non diventano grandi come tutto lo schermo.
+    </p>
+
+    <p>
+      Ogni volta che gonfierai un palloncino guadagnerai <b>{{ winningsPerPump | currency }}</b> ma se il
+      palloncino
+      scoppia perdi i soldi che avevi guadagnato per quel palloncino.
+      Per incassare i soldi di un palloncino smetti di gonfiare prima che scoppi e clicca sul bottone
+      <b>Incassa &euro;&euro;&euro;</b>.
+    </p>
+
+    <p>
+      Ogni volta che incassi i soldi di un palloncino oppure il palloncino scoppia apparirà un nuovo
+      palloncino.
+    </p>
+
+    <p>
+      Alla fine dell'esperimento ti sarà data la quantità di soldi che hai guadagnato durante il gioco.
+    </p>
+
+    <p>
+      Premi il bottone sinistro del mouse per vedere un riassunto delle istruzioni.
+    </p>
+  </div>
+  <a href="#/configuration" ng-click="$event.stopPropagation()" class="config">configuration</a>
+</script>
+
+<script type="text/ng-template" id="app/templates/end.html">
+  <div class="text" ng-switch="winnings">
+    <p ng-switch-when="0">
+      Purtroppo non hai vinto nulla!
+    </p>
+
+    <p ng-switch-default>
+      Congratulazioni! Hai vinto {{winnings | currency:'&euro;':2}}
+    </p>
+  </div>
+</script>
+<script type="text/ng-template" id="app/templates/game.html">
+  <audio id="blow" src="{{blowSound}}"></audio>
+  <audio id="pop" src="{{popSound}}"></audio>
+  <audio id="cash" src="{{cashSound}}"></audio>
+
+  <div style="width: 50%; bottom: 0; position: absolute;">
+    <img id="balloon" class="center" ng-hide="balloonExploded" src="app/media/balloon-150128.svg"
+         height="{{balloonHeight}}px">
+    <img class="center" ng-show="balloonExploded" src="app/media/1374334179.svg">
+
+    <p>
+      <button class="center" style="margin-top: 20px" ng-show="!balloonExploded" ng-click="pump()">
+        Gonfia il palloncino
+      </button>
+    </p>
+  </div>
+  <div style="left: 60%; bottom: 0; position: absolute;">
+    <ul>
+      <li>
+        Guadagno potenziale: {{potentialEarnings | currency:'&euro;':2}}
+      </li>
+      <li>
+        Palloncino numero: {{balloonNumber}}
+      </li>
+      <li>
+        Numero di gonfiaggi: {{numberOfPumps}}
+      </li>
+      <li>
+        Guadagni totali: {{totalWinnings | currency:'&euro;':2}}
+      </li>
+    </ul>
+    <p>
+      <button class="center" ng-click="collectWinnings()">Incassa &euro;&euro;&euro;</button>
+    </p>
+  </div>
+</script>
+<script type="text/ng-template" id="app/templates/summary.html">
+  <div class="text">
+    <h3>Riassunto</h3>
+    <ul>
+      <li>Guadagnerai <b>{{winningsPerPump|currency}}</b>
+        ogni volta che gonfi un palloncino senza che questo scoppi
+      </li>
+      <li>Quando premi <b>Incassa &euro;&euro;&euro;</b> accumuli i soldi per quel palloncino</li>
+      <li>Quando il palloncino esplode perdi i soldi di quel palloncino</li>
+      <li>Ci sono in tutto {{maxBalloons}} palloncini</li>
+      <li>Alla fine ti saranno dati esattamente i soldi che hai guadagnato durante il gioco</li>
+    </ul>
+    <p>Hai qualche domanda?</p>
+
+    <p>Premi il bottone sinistro del mouse per iniziare.</p>
+  </div>
+</script>
+
+
 </body>
 </html>
